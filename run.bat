@@ -12,6 +12,7 @@ if %errorlevel% neq 0 (
 )
 
 :: 2. Check if the Virtual Environment exists. If not, create it.
+:: Note: We use "venv" (no dot) for the folder name here.
 if not exist "venv" (
     echo First time setup: Creating virtual environment...
     python -m venv venv
@@ -19,7 +20,7 @@ if not exist "venv" (
     echo Activating environment...
     call venv\Scripts\activate
 
-    echo Installing dependencies (this might take a minute)...
+    echo Installing dependencies - please wait...
     pip install -r requirements.txt
 ) else (
     echo Environment found. Activating...
