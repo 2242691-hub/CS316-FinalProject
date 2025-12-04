@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import sympy as sp
 from PyQt6 import QtWidgets, uic
-from PyQt6.QtWidgets import QTableWidgetItem, QMessageBox, QHeaderView, QWidget, QHBoxLayout, QVBoxLayout
+from PyQt6.QtWidgets import QTableWidgetItem, QMessageBox, QHeaderView, QWidget, QHBoxLayout
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from model import NewtonRaphsonModel
@@ -22,49 +22,39 @@ class NewtonController(QtWidgets.QMainWindow):
         # 2. Initialize the Model
         self.model = NewtonRaphsonModel()
 
-        # 3. Connect UI signals FIRST (Before moving widgets around)
+        # 3. Connect UI signals FIRST
         self.btnSolve.clicked.connect(self.calculate)
 
-        # 4. Setup Table Header stretching
+        # 4. Table Configuration (Crucial for the "Clean" look)
         header = self.tableIterations.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
-        # 5. Setup the Graph (The "Right Side")
-        # We do this AFTER connecting signals to ensure widgets exist
+        # ENABLE ALTERNATING COLORS for readability
+        self.tableIterations.setAlternatingRowColors(True)
+        # Hide the vertical header (row numbers 1, 2, 3...) since we have an "Iter" column
+        self.tableIterations.verticalHeader().setVisible(False)
+
+        # 5. Setup the Graph
         self.setup_graph_ui()
 
-        # 6. Apply the Cyberpunk Theme
+        # 6. Apply the Theme
         self.apply_game_theme()
 
     def setup_graph_ui(self):
         """Safely re-arranges the UI to put controls on Left and Graph on Right."""
-
-        # A. Create the Matplotlib Figure and Canvas
         self.figure = Figure(figsize=(5, 4), dpi=100)
         self.canvas = FigureCanvas(self.figure)
         self.ax = self.figure.add_subplot(111)
         self.style_plot_area()
 
-        # B. Logic to Split the Window safely
-        # 1. Get the current central widget (which holds your UI)
         old_central = self.centralWidget()
-
-        # 2. Create a new "Wrapper" widget that will hold both sides
         wrapper = QWidget()
         wrapper_layout = QHBoxLayout(wrapper)
 
         if old_central:
-            # CRITICAL FIX: Immediately reparent the old_central to the wrapper.
-            # This prevents it from being garbage collected or deleted by Qt.
             old_central.setParent(wrapper)
-
-            # Add the Old UI (Left Side)
             wrapper_layout.addWidget(old_central, stretch=1)
-
-            # Add the Graph (Right Side)
             wrapper_layout.addWidget(self.canvas, stretch=2)
-
-            # Set this new wrapper as the main window's central widget
             self.setCentralWidget(wrapper)
 
     def style_plot_area(self):
@@ -83,44 +73,85 @@ class NewtonController(QtWidgets.QMainWindow):
         self.ax.grid(True, color='#5c5c7f', linestyle='--', alpha=0.5)
 
     def apply_game_theme(self):
-        """Applies a Video Game / Arcade style to the interface."""
+        """Applies a High-Contrast Table style + Cyberpunk UI."""
+
+        # Colors
         bg_dark = "#1e1e2e"
-        bg_lighter = "#2b2b40"
-        neon_green = "#00e676"
-        neon_green_dark = "#00a856"
-        neon_cyan = "#00e5ff"
         text_white = "#ffffff"
+        neon_green = "#00e676"
+        neon_cyan = "#00e5ff"
+
+        # Table Specific Colors (Matches the readable aesthetic)
+        table_header_bg = "#006064"  # Deep Cyan/Teal for headers
+        table_row_even = "#2b2b40"  # Dark Grey
+        table_row_odd = "#383854"  # Slightly lighter Grey
+        table_grid = "#454560"
 
         style = f"""
         QMainWindow {{ background-color: {bg_dark}; }}
-        QLabel {{ color: {text_white}; font-family: 'Consolas', monospace; font-weight: bold; }}
-        QLineEdit {{
-            background-color: {bg_lighter}; color: {neon_cyan};
-            border: 2px solid #5c5c7f; border-radius: 8px; padding: 8px;
-            font-family: 'Consolas', monospace;
+
+        QLabel {{ 
+            color: {text_white}; 
+            font-family: 'Segoe UI', sans-serif; 
+            font-size: 14px;
+            font-weight: bold; 
         }}
-        QLineEdit:focus {{ border: 2px solid {neon_cyan}; }}
+
+        QLineEdit {{
+            background-color: #2b2b40; 
+            color: {neon_cyan};
+            border: 2px solid #5c5c7f; 
+            border-radius: 6px; 
+            padding: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+        }}
+
         QPushButton {{
-            background-color: {neon_green}; color: #000000;
-            border-bottom: 6px solid {neon_green_dark}; border-radius: 10px;
-            font-family: 'Verdana', sans-serif; font-weight: 900; padding: 12px;
+            background-color: {neon_green}; 
+            color: #000000;
+            border-bottom: 5px solid #00a856; 
+            border-radius: 8px;
+            font-weight: 900; 
+            padding: 10px;
+            font-size: 15px;
         }}
         QPushButton:pressed {{
-            border-bottom: 2px solid {neon_green_dark}; margin-top: 4px;
+            border-bottom: 2px solid #00a856; 
+            margin-top: 3px;
         }}
+
+        /* --- THE AESTHETIC TABLE STYLES --- */
         QTableWidget {{
-            background-color: {bg_lighter}; color: {text_white};
-            gridline-color: #5c5c7f; border: 2px solid #5c5c7f;
-            font-family: 'Consolas', monospace;
+            background-color: {table_row_even};
+            alternate-background-color: {table_row_odd};
+            color: white;
+            gridline-color: {table_grid};
+            border: 2px solid {table_grid};
+            font-size: 14px;
+            font-family: 'Segoe UI', sans-serif;
         }}
+
+        /* The Header (Top Bar) */
         QHeaderView::section {{
-            background-color: #11111b; color: {neon_cyan}; padding: 5px;
+            background-color: {table_header_bg};
+            color: white;
+            padding: 8px;
+            border: 1px solid {table_grid};
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase; /* Makes it look like a dashboard */
+        }}
+
+        /* The Corner Button (Top Left) */
+        QTableCornerButton::section {{
+            background-color: {table_header_bg};
+            border: 1px solid {table_grid};
         }}
         """
         self.setStyleSheet(style)
 
     def calculate(self):
-        """Calculates root and updates graph."""
         func_str = self.inputFunction.text()
         guess_str = self.inputGuess.text()
         tol_str = self.inputTol.text()
@@ -145,10 +176,7 @@ class NewtonController(QtWidgets.QMainWindow):
             self.lblResult.setText(f"ROOT FOUND: {result['root']:.6f}")
             self.lblResult.setStyleSheet(
                 "color: #00e676; font-size: 14pt; font-weight: bold; border: 2px dashed #00e676; padding: 5px;")
-
-            # UPDATE THE GRAPH
             self.update_graph(func_str, result['root'], result['history'], guess)
-
         else:
             self.lblResult.setText("Failed to converge")
             self.lblResult.setStyleSheet("color: #ff1744; font-size: 12pt;")
@@ -156,7 +184,6 @@ class NewtonController(QtWidgets.QMainWindow):
         self.populate_table(result['history'])
 
     def update_graph(self, func_str, root, history, guess):
-        """Plots the function curve and the root."""
         self.ax.clear()
         self.style_plot_area()
 
@@ -181,7 +208,6 @@ class NewtonController(QtWidgets.QMainWindow):
             path_x = [h['x_n'] for h in history]
             path_y = [h['f_x'] for h in history]
             self.ax.scatter(path_x, path_y, color='#ff1744', s=30, zorder=5, label='Iterations')
-
             self.ax.plot(root, 0, marker='*', markersize=15, color='#00e676', markeredgecolor='white', linestyle='None',
                          label='Root')
 
@@ -191,7 +217,6 @@ class NewtonController(QtWidgets.QMainWindow):
             frame.set_edgecolor('#5c5c7f')
             for text in legend.get_texts():
                 text.set_color('white')
-
             self.canvas.draw()
 
         except Exception as e:
@@ -201,9 +226,19 @@ class NewtonController(QtWidgets.QMainWindow):
         self.tableIterations.setRowCount(0)
         for row_idx, data in enumerate(history):
             self.tableIterations.insertRow(row_idx)
-            items = [str(data['iteration']), f"{data['x_n']:.6f}", f"{data['f_x']:.6f}", f"{data['df_x']:.6f}"]
+
+            # Align text to Center for better readability
+            items = [
+                str(data['iteration']),
+                f"{data['x_n']:.6f}",
+                f"{data['f_x']:.6f}",
+                f"{data['df_x']:.6f}"
+            ]
+
             for col_idx, val in enumerate(items):
-                self.tableIterations.setItem(row_idx, col_idx, QTableWidgetItem(val))
+                item = QTableWidgetItem(val)
+                item.setTextAlignment(0x0084)  # Qt.AlignmentFlag.AlignCenter
+                self.tableIterations.setItem(row_idx, col_idx, item)
 
     def show_error(self, message):
         msg = QMessageBox(self)
